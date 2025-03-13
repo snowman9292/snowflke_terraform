@@ -1,0 +1,40 @@
+name: Deploy Customer Table to Snowflake
+
+on:
+  push:
+    branches:
+      - main  # Runs when changes are pushed to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install SnowSQL (Snowflake CLI)
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql
+          chmod +x snowsql
+          sudo mv snowsql /usr/local/bin/
+
+      - name: Deploy Customer Table
+        run: |
+          snowsql -a ${{ secrets.SNOWFLAKE_ACCOUNT }} \
+                  -u ${{ secrets.SNOWFLAKE_USER }} \
+                  -p ${{ secrets.SNOWFLAKE_PASSWORD }} \
+                  -d ${{ secrets.SNOWFLAKE_DATABASE }} \
+                  -s ${{ secrets.SNOWFLAKE_SCHEMA }} \
+                  -w ${{ secrets.SNOWFLAKE_WAREHOUSE }} \
+                  -r ${{ secrets.SNOWFLAKE_ROLE }} \
+                  -q "SELECT CURRENT_VERSION();"  # Test connection
+          
+          snowsql -a ${{ secrets.SNOWFLAKE_ACCOUNT }} \
+                  -u ${{ secrets.SNOWFLAKE_USER }} \
+                  -p ${{ secrets.SNOWFLAKE_PASSWORD }} \
+                  -d ${{ secrets.SNOWFLAKE_DATABASE }} \
+                  -s ${{ secrets.SNOWFLAKE_SCHEMA }} \
+                  -w ${{ secrets.SNOWFLAKE_WAREHOUSE }} \
+                  -r ${{ secrets.SNOWFLAKE_ROLE }} \
+                  -f customer_table.sql  # Run SQL script
